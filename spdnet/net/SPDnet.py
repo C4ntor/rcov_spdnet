@@ -100,13 +100,14 @@ class RiemSPD(nn.Module):
         super(RiemSPD, self).__init__()
         
         self.encoder = nn.Sequential(
-            BiMap(in_size, 5),
+            BiMap(in_size, 4),
             #ReEig(),
             #nn.Tanh()
+            #the original concept of SPDNET also uses Rectification layers, but we're interested in covariances (possibly the negative ones) 
         )
         
         self.decoder = nn.Sequential(
-            BiMap(5, out_size),
+            BiMap(4, out_size),
             #nn.ReLU()
         )
         
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     print("is_x_spd?:", is_spd(x1.detach().numpy()))
     print("is_x1_spd?:", is_spd(x1.detach().numpy()))
     print("is_x1_spd?:", is_spd(x2.detach().numpy()))
-    net = RiemSPD(2)
+    net = RiemSPD(2,2)
     print(net(x))
 
 

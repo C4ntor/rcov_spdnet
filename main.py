@@ -13,19 +13,30 @@ from spdnet.data.linalg import is_spd
 
 #ARGS
 N_OBS=1000
-N_STOCK = 2
-N_LAGS = 20
+N_STOCK = 3
+N_LAGS = 5
+
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+np.random.seed(42)
+
 
 train_data = [make_spd_matrix(N_STOCK).tolist() for _ in range(N_OBS)]
-dict = extract_x_y_from_tseries(train_data,N_LAGS,'d')
+#creates a list (time series) of SPD matrices with size (N_STOCK X N_STOCK).
+#the list contains (N_OBS) matrices
 
-#PLEASE NOTICE THAT KRONECKER PRODUCT MODE IS EXPERIMENTAL!
+
+dict = extract_x_y_from_tseries(train_data,N_LAGS,'d')
+#preprocess the generated matrices, preparing them to be included in RCOVDataset (as x, and y)
+
+
+#PLEASE NOTICE THAT KRONECKER PRODUCT MODE IS STILL EXPERIMENTAL!
 train_dataset = RCOVDataset(dict['x'], dict['y'])
 
 
 
 M_SIZE=len(train_dataset.x[0])
-
+#determines the size of the diagonal block matrix or krockere matrix, based on the lags and input size
 
 
 print("dataset.x ", train_dataset.x, "\n")
@@ -34,12 +45,13 @@ print("dataset.y ", train_dataset.y, "\n")
 
 
 network = RiemSPD(M_SIZE,N_STOCK)
-optimizer = optim.Adam(network.parameters(), lr=0.1)
+optimizer = optim.Adam(network.parameters(), lr=0.05)
 criterion = MSELoss()
 loss_hist = []
 
 h_real_var_01 = []              #
 h_pred_var_01 = []              #
+
 
 for x, y  in train_dataset:
         x_i = torch.Tensor(x)
@@ -62,12 +74,22 @@ for x, y  in train_dataset:
         loss_i = loss.item()
         loss.backward()
 
-        print("TRAIN LOSS: {0}".format(loss_i))
+        print("LOSS: {0}".format(loss_i))
+
+        
 
         loss_hist.append((loss_i))
         optimizer.step()
 
-#plt.plot(loss_hist, label='loss')
+torch.save(network.state_dict(), 'model.pth')
+
+
+plt.plot(loss_hist, label='loss')
+plt.legend()
+plt.show()
+
+#we can load it as follows: loaded_model = RiemSPD(M_SIZE,N_STOCK)
+                        #loaded_model.load_state_dict(torch.load('model.pth'))
 
 plt.plot(h_pred_var_01, 'b', label='predicted') #
 plt.plot(h_real_var_01, 'r', label='real') #
