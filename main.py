@@ -20,7 +20,6 @@ train_data = [make_spd_matrix(N_STOCK).tolist() for _ in range(N_OBS)]
 dict = extract_x_y_from_tseries(train_data,N_LAGS,'d')
 
 #PLEASE NOTICE THAT KRONECKER PRODUCT MODE IS EXPERIMENTAL!
-
 train_dataset = RCOVDataset(dict['x'], dict['y'])
 
 
