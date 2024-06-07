@@ -40,10 +40,14 @@ def extract_x_y_from_tseries(rcov_ts,n,mode):
                 # if only one lag is used, do kronecker product of that obs with itself
                 x.append(get_kronecker_product(obs[0], obs[0]))
             else:
-                kron_res = get_kronecker_product(obs[0], obs[1]).numpy()
-                for i in range(2, len(obs)):
-                    kron_res = get_kronecker_product(kron_res, obs[i]).numpy()
-                    x.append(torch.from_numpy(kron_res).clone())
+                kron_res = get_kronecker_product(obs[0], obs[1])
+                if len(obs)<=2:
+                    x.append(kron_res)
+                else:
+                    for i in range(2, len(obs)):
+                        kron_res = get_kronecker_product(kron_res, obs[i])
+                        x.append((kron_res))
+                
 
         if mode == "d":
             x.append(get_block_diagonal_tensor(*obs))

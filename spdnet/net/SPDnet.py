@@ -81,31 +81,33 @@ class ReEig(nn.Module):
 class RiemSPD(nn.Module):
     """
     Class used to instantiate the network,
-    Network will take an SPD input matrix of size (NxN),
-    will return an SPD output matrix of same size (NxN)
+    Network will take an SPD input matrix of size (MxM),
+    will return an SPD output matrix of size (NxN)
     by applying reductions in several layers, while preserving SPD properties.
 
 
     Args:
     in_size: int
         size of the single dimension of input (square) matrix
-        (es: for a NxN matrix, in_size = N)
+        (es: for a MxM matrix, in_size = M)
+    out_size: int 
+        size of the single dimension of output (square) matrix
+        (es: for a NxN matrix, out_size = N)
     
     """
 
-    def __init__(self, in_size):
+    def __init__(self, in_size, out_size):
         super(RiemSPD, self).__init__()
-        self.n_features = in_size
         
         self.encoder = nn.Sequential(
             BiMap(in_size, 5),
-            ReEig(),
-            nn.Tanh()
+            #ReEig(),
+            #nn.Tanh()
         )
         
         self.decoder = nn.Sequential(
-            BiMap(5, in_size),
-            nn.ReLU()
+            BiMap(5, out_size),
+            #nn.ReLU()
         )
         
     def forward(self, X):
