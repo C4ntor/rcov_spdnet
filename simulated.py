@@ -14,7 +14,7 @@ from spdnet.data.linalg import is_spd
 #ARGS
 N_OBS=1000
 N_STOCK = 3
-N_LAGS = 5
+N_LAGS = 3
 
 torch.manual_seed(42)
 torch.cuda.manual_seed(42)
@@ -48,10 +48,10 @@ network = RiemSPD(M_SIZE,N_STOCK)
 optimizer = optim.Adam(network.parameters(), lr=0.05)
 criterion = MSELoss()
 loss_hist = []
-
+i=0
 h_real_var_01 = []              #
 h_pred_var_01 = []              #
-
+h_dumb_var_01 = []
 
 for x, y  in train_dataset:
         x_i = torch.Tensor(x)
@@ -65,7 +65,8 @@ for x, y  in train_dataset:
         prediction = network(x_i)
         assert(is_spd(prediction.detach().numpy()))
         h_pred_var_01.append(prediction[0][1].item())  #
-
+        h_dumb_var_01.append(dict['b'][i])
+        print(dict['b'][i])
         print('x_i',x_i)
         print('y_i',y_i)
         print('y_i_PRED',prediction)
@@ -91,8 +92,9 @@ plt.show()
 #we can load it as follows: loaded_model = RiemSPD(M_SIZE,N_STOCK)
                         #loaded_model.load_state_dict(torch.load('model.pth'))
 
-plt.plot(h_pred_var_01, 'b', label='predicted') #
-plt.plot(h_real_var_01, 'r', label='real') #
+plt.plot(h_pred_var_01, 'b', label='predicted_var_01') #
+plt.plot(h_real_var_01, 'r', label='real_var_01') #
+
 
 
 plt.legend()

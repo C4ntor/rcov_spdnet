@@ -1,12 +1,6 @@
 # SPDNET for RCOV Time Series
 
-Welcome to My Awesome Python Package! This package is designed to make your life easier by providing a collection of useful tools and utilities for data analysis.
-
-## Features
-
-- Powerful linear algebra operations in `linalg.py`.
-- Handy utilities for common tasks in `utils.py`.
-- Cutting-edge neural network implementations in `spd.py`.
+DL-RL Project.
 
 ## Installation
 From the root directory:
@@ -17,3 +11,14 @@ pip install -e .
 
 ```
 This will facilitate the import of other modules.
+
+-spdnet>net contains all file related to the network architecture
+-spdnet>data contains all utils related to the building of dataset
+
+
+To test the network simply run
+
+```bash
+python3 simulated.py
+
+```

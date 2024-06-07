@@ -1,10 +1,16 @@
 from sklearn.datasets import make_spd_matrix
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from datetime import datetime, timedelta
+import numpy as np
+
 
 
 def make_financial_spd_matrix(n_stocks, n_obs):
     """
     Creates a time series of simulated RCOV matrices, correlated in time
+    PROBLEM: Does not guarantee SPD matrices
 
     Args:
     n_stocks: int
@@ -25,6 +31,44 @@ def make_financial_spd_matrix(n_stocks, n_obs):
         time_series.append(Sigma_t.tolist())
     return time_series[-n_obs:][0]
 
+
+
+
+
+def get_next_date(date_string, x):
+    """Given a YY-MM-DD date string, it returns the date string of next (x) days"""
+    current_date = datetime.strptime(date_string, "%Y-%m-%d")
+    next_date = current_date + timedelta(days=x)
+    return next_date.strftime("%Y-%m-%d")
+
+
+def plot_histograms(data, bins, xLabel):
+    """Assuming to have a dataframe as input
+    """
+    n_graphs = data.shape[1]
+    plt.figure(figsize=(1, n_graphs))
+
+    for stock in data.columns:
+        plt.hist(data[stock], bins=bins, alpha=0.4, label=stock)
+    plt.xlabel(xLabel)
+    plt.ylabel("frequency")
+    plt.legend(loc="upper right")
+    plt.show()
+
+
+def plot_prices(data):
+    """Assuming to have a dataframe as input
+    """
+    n_graphs = data.shape[1]
+    plt.figure(figsize=(1, n_graphs))
+    for stock in data.columns:
+        plt.plot(data[stock], label=f'{stock}')
+
+    plt.title('Stock Prices')
+    plt.xlabel('Time')
+    plt.ylabel('Closing Price')
+    plt.legend()
+    plt.show()
 
 
 

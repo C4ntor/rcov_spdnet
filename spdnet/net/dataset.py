@@ -22,7 +22,8 @@ def extract_x_y_from_tseries(rcov_ts,n,mode):
             can be 'k' for kronecker product or 'd' for diagonal block matrix
 
         Labels (y to be predicted) are determined as the first (matrix) occurence in the given time series that follows the latest (most recent) lag
-        returns a dictionary in the form {'x':X_data, 'y':Y_data}
+        returns a dictionary in the form {'x':X_data, 'y':Y_data, 'b':b_data}
+        Where b_data collects the lagged covariance matrix previous, to the predicted one, for each iteration
     """
      
     if mode not in ["k", "d"]:
@@ -33,6 +34,7 @@ def extract_x_y_from_tseries(rcov_ts,n,mode):
 
     x = []
     y = []
+    b = []
     for i in range(n, len(rcov_ts)):
         obs = np.array(rcov_ts[i - n : i])
         if mode == "k":
@@ -51,10 +53,10 @@ def extract_x_y_from_tseries(rcov_ts,n,mode):
 
         if mode == "d":
             x.append(get_block_diagonal_tensor(*obs))
-        
+        b.append(rcov_ts[i-1])
         y.append(rcov_ts[i])
     
-    return {'x':x, 'y':y}
+    return {'x':x, 'y':y, 'b':b}
     
 
 
@@ -105,14 +107,6 @@ if __name__ == "__main__":
 
     print("*****")
 
-"""    train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=False)
-    for x, y  in train_dataloader:
-        print(x)
-        print("\n")
-        print(y)
-        print("====")
- """
-    
 
     
 
