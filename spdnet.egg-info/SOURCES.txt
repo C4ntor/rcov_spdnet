@@ -1,0 +1,5 @@
+setup.py
+spdnet.egg-info/PKG-INFO
+spdnet.egg-info/SOURCES.txt
+spdnet.egg-info/dependency_links.txt
+spdnet.egg-info/top_level.txt
