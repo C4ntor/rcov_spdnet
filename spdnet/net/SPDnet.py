@@ -1,10 +1,23 @@
 import torch
 from torch import nn
-
-#from numpy.linalg import matrix_rank
-
+import numpy as np
 from spdnet.data.linalg import is_spd
 from spdnet.data.utils import make_spd_matrix
+
+
+
+
+class StiefelParameter(nn.Parameter):
+    """
+        Creates parameters that are constrained to lie on the Stiefel manifold. 
+        Rmk: Stiefel manifold is the set of all orthogonal matrices of a given dimension
+    """
+    def __new__(cls, data=None, requires_grad=True):
+        #returns an instance of the class, calling the parent class (nn.Parameter)
+        return super(StiefelParameter, cls).__new__(cls, data, requires_grad=requires_grad)
+
+    def __repr__(self):
+        return 'Parameter:' + self.data.__repr__()
 
 
 class BiMap(nn.Module):
@@ -23,10 +36,12 @@ class BiMap(nn.Module):
             (es: for a NxN matrix, out_size = N)
 
         Returns:
-        calls constructor, and initializes weights
+        calls constructor, and initializes weights as orthogonal (semi-orthogonal matrix)
         """
         super(BiMap, self).__init__()
-        self.W = nn.Parameter(torch.rand((out_size, in_size)).normal_())  #weights initialization following stand. normal distrib.
+        self.W = StiefelParameter(torch.FloatTensor(in_size, out_size), requires_grad=True)
+        nn.init.orthogonal_(self.W)
+
 
 
     def forward(self, X):
@@ -39,11 +54,12 @@ class BiMap(nn.Module):
         The output of forward step, that is W^T*X*W  
         (matrix multiplication of input matrix with weights)
         
-        """       
+        """    
         x = X.squeeze(0)
-        w_t = self.get_weights()
-        res = torch.mm(w_t,x)
-        res = torch.mm(res, torch.transpose(w_t,0,1))
+        res = x
+        weight = self.W
+        res = torch.mm(res, weight)
+        res = torch.mm(weight.T, res)
         return res
     
     def get_weights(self):
@@ -53,28 +69,60 @@ class BiMap(nn.Module):
         """
         return self.W
 
-    """  def check_rank(self):
-        # sanity check, if weights matrix is degenerate
-        return min(self.W.data.size()) == matrix_rank(self.W.data.numpy()) """
-    
+class Rectify(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, X, epsilon):
+        """
+        The method computes the SVD of the input matrix and then rectifies its singular values to be above the specified threshold (epsilon)
+        """
+
+        ctx.save_for_backward(X, epsilon)
+        u, s, v = X.svd()
+        s[s<epsilon] = epsilon
+        res = u.mm(s.diag().mm(u.t()))
+        return res
+
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        The backward method computes the gradients with respect to the input matrix using the chain rule and gradients of the SVD operation.
+        """
+
+        X, epsilon = ctx.saved_variables
+        grad_input = None
+
+        if ctx.needs_input_grad[0]:
+            u, s, v = X.svd()
+
+            max_mask = s > epsilon
+            s_max = torch.where(max_mask, s, epsilon)
+            dLdV = 2 * (grad_output.mm(u) * s_max.unsqueeze(0))
+            dLdS = torch.eye(s.size(0), device=s.device) * (max_mask.float().matmul(grad_output).matmul(u.t()))
+            grad_input = u @ (dLdV - dLdV.t() + dLdS)
+
+            
+        return grad_input, None
 
 
 class ReEig(nn.Module):
     """
     Also known as ReEig layer (in some papers on SPDNets)
-    Enables non-linearity by applying ReLU block for every element of matrix.
-
+    Enables non-linearity by applying Rectification block  ensuring that eigenvalues of the input matrix are above a certain threshold (determined by epsilon)
+    We follow the implementation described in 'Huang, Z., & Van Gool, L. J. (2017, February). A Riemannian Network for SPD Matrix Learning'
 
     Returns:
     torch.autograd.Variable object 
         returns SPD matrix of the same size, result of nullification of negative elements of input matrix.
     """
-    def __init__(self):
+    def __init__(self, epsilon = 1e-4):
         super(ReEig, self).__init__()
-        self.relu = nn.ReLU()
+        self.register_buffer('epsilon', torch.FloatTensor([epsilon])) #creates a persistent tensor
+    
 
     def forward(self, X):
-        return self.relu(X)
+        return Rectify.apply(X, self.epsilon)
 
 
 
@@ -101,14 +149,14 @@ class RiemSPD(nn.Module):
         
         self.encoder = nn.Sequential(
             BiMap(in_size, 4),
-            #ReEig(),
+            ReEig(),
             #nn.Tanh()
             #the original concept of SPDNET also uses Rectification layers, but we're interested in covariances (possibly the negative ones) 
         )
         
         self.decoder = nn.Sequential(
             BiMap(4, out_size),
-            #nn.ReLU()
+            ReEig()
         )
         
     def forward(self, X):
@@ -119,10 +167,11 @@ class RiemSPD(nn.Module):
 
 
 if __name__ == "__main__":
-    bimap_l = BiMap(2,3)
+    bimap_l = BiMap(2,6)
     regeig_l = ReEig()
     x = make_spd_matrix(2)
     x = torch.Tensor(x).unsqueeze(0)
+    print("x",x)
     x1 = bimap_l.forward(x)
     print("weight:\n", bimap_l.get_weights())
     print("result:\n",x1)
@@ -132,7 +181,7 @@ if __name__ == "__main__":
     print("is_x_spd?:", is_spd(x1.detach().numpy()))
     print("is_x1_spd?:", is_spd(x1.detach().numpy()))
     print("is_x1_spd?:", is_spd(x2.detach().numpy()))
-    net = RiemSPD(2,2)
+    net = RiemSPD(2,3)
     print(net(x))
 
 

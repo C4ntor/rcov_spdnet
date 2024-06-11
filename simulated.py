@@ -8,17 +8,18 @@ from spdnet.net.SPDnet import RiemSPD
 from spdnet.net.dataset import RCOVDataset, extract_x_y_from_tseries
 from spdnet.data.utils import make_spd_matrix
 from spdnet.data.linalg import is_spd
-
+from spdnet.net.optimizer import StiefelMetaOptimizer
 
 
 #ARGS
 N_OBS=1000
-N_STOCK = 3
-N_LAGS = 3
+N_STOCK = 2
+N_LAGS = 5
+SEED = 1
 
-torch.manual_seed(42)
-torch.cuda.manual_seed(42)
-np.random.seed(42)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+np.random.seed(SEED)
 
 
 train_data = [make_spd_matrix(N_STOCK).tolist() for _ in range(N_OBS)]
@@ -45,13 +46,15 @@ print("dataset.y ", train_dataset.y, "\n")
 
 
 network = RiemSPD(M_SIZE,N_STOCK)
-optimizer = optim.Adam(network.parameters(), lr=0.05)
+optimizer = torch.optim.SGD(network.parameters(), lr=0.05)
+optimizer = StiefelMetaOptimizer(optimizer)
 criterion = MSELoss()
 loss_hist = []
 i=0
 h_real_var_01 = []              #
 h_pred_var_01 = []              #
 h_dumb_var_01 = []
+cumulative_loss=0
 
 for x, y  in train_dataset:
         x_i = torch.Tensor(x)
@@ -95,10 +98,10 @@ plt.show()
 plt.plot(h_pred_var_01, 'b', label='predicted_var_01') #
 plt.plot(h_real_var_01, 'r', label='real_var_01') #
 
-
-
 plt.legend()
 plt.show()
+print("CUMULATIVE_LOSS:", sum(loss_hist))
+print("AVG_LOSS:", sum(loss_hist)/N_OBS)
 
 
 
