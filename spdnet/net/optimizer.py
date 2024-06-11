@@ -46,8 +46,6 @@ class StiefelMetaOptimizer(object):
                 if p.grad is None:
                     continue
                 if isinstance(p, StiefelParameter):
-                    print("trans", trans)
-                    print("data", p.data)
                     trans = retraction(p.data, self.state[id(p)])
                     p.data.fill_(0).add_(trans)
 

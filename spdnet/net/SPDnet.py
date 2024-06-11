@@ -5,8 +5,6 @@ from spdnet.data.linalg import is_spd
 from spdnet.data.utils import make_spd_matrix
 
 
-
-
 class StiefelParameter(nn.Parameter):
     """
         Creates parameters that are constrained to lie on the Stiefel manifold. 
@@ -148,14 +146,13 @@ class RiemSPD(nn.Module):
         super(RiemSPD, self).__init__()
         
         self.encoder = nn.Sequential(
-            BiMap(in_size, 4),
+            BiMap(in_size, 5),
             ReEig(),
             #nn.Tanh()
-            #the original concept of SPDNET also uses Rectification layers, but we're interested in covariances (possibly the negative ones) 
         )
         
         self.decoder = nn.Sequential(
-            BiMap(4, out_size),
+            BiMap(5, out_size),
             ReEig()
         )
         
