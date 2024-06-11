@@ -10,7 +10,7 @@ import numpy as np
 def make_financial_spd_matrix(n_stocks, n_obs):
     """
     Creates a time series of simulated RCOV matrices, correlated in time
-    PROBLEM: Does not guarantee SPD matrices
+    PROBLEM: Does not guarantee SPD matrices so we use numpy spd matrix generator instead
 
     Args:
     n_stocks: int
