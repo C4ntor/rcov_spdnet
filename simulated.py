@@ -83,6 +83,7 @@ for x, y  in train_dataset:
 
         print("LOSS: {0}".format(loss_i))
 
+
         
         time_step += 1
         loss_hist.append((loss_i))
