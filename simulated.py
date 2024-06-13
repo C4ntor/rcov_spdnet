@@ -83,6 +83,8 @@ for x, y  in train_dataset:
 
         print("LOSS: {0}".format(loss_i))
 
+
+
         
 
         
